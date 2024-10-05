@@ -12,13 +12,46 @@ class FuncFit(BaseProblem):
     def __init__(self, error_method: str = "mse"):
         super().__init__()
 
-        assert error_method in {"mse", "rmse", "mae", "mape"}
+        assert error_method in {"mse", "rmse", "mae", "mape", "pureples"}
         self.error_method = error_method
 
     def setup(self, state: State = State()):
         return state
 
     def evaluate(self, state, randkey, act_func, params):
+
+        predict = vmap(act_func, in_axes=(None, None, 0))(
+            state, params, self.inputs
+        )
+
+        # Using match-case for handling error method
+        match self.error_method:
+            case "mse":
+                loss = jnp.mean((predict - self.targets) ** 2)
+
+            case "rmse":
+                loss = jnp.sqrt(jnp.mean((predict - self.targets) ** 2))
+
+            case "mae":
+                loss = jnp.mean(jnp.abs(predict - self.targets))
+
+            case "mape":
+                loss = jnp.mean(jnp.abs((predict - self.targets) / self.targets))
+
+            case "pureples":
+                # Pureples logic: compute sum square error for XOR problem
+                sum_square_error = jnp.sum((predict - self.targets) ** 2) / float(len(self.targets))
+                # Fitness in Pureples is calculated as: 1 - sum_square_error
+                loss = 1.0 - sum_square_error
+
+            case _:
+                raise NotImplementedError(f"Error method {self.error_method} not implemented")
+
+        # Return -loss for minimization (in both Pureples and TensorNEAT)
+        return -loss
+
+
+    """ def evaluate(self, state, randkey, act_func, params):
 
         predict = vmap(act_func, in_axes=(None, None, 0))(
             state, params, self.inputs
@@ -39,7 +72,7 @@ class FuncFit(BaseProblem):
         else:
             raise NotImplementedError
 
-        return -loss
+        return -loss """
 
     def show(self, state, randkey, act_func, params, *args, **kwargs):
         predict = vmap(act_func, in_axes=(None, None, 0))(

@@ -1,2 +1,3 @@
 from .hyperneat import HyperNEAT
-from .substrate import BaseSubstrate, DefaultSubstrate, FullSubstrate
+from .geennshyperneat import geennsHyperNEAT
+from .substrate import BaseSubstrate, DefaultSubstrate, FullSubstrate, GeennsHyperNeatSubstrate
