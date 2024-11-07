@@ -50,30 +50,6 @@ class FuncFit(BaseProblem):
         # Return -loss for minimization (in both Pureples and TensorNEAT)
         return -loss
 
-
-    """ def evaluate(self, state, randkey, act_func, params):
-
-        predict = vmap(act_func, in_axes=(None, None, 0))(
-            state, params, self.inputs
-        )
-
-        if self.error_method == "mse":
-            loss = jnp.mean((predict - self.targets) ** 2)
-
-        elif self.error_method == "rmse":
-            loss = jnp.sqrt(jnp.mean((predict - self.targets) ** 2))
-
-        elif self.error_method == "mae":
-            loss = jnp.mean(jnp.abs(predict - self.targets))
-
-        elif self.error_method == "mape":
-            loss = jnp.mean(jnp.abs((predict - self.targets) / self.targets))
-
-        else:
-            raise NotImplementedError
-
-        return -loss """
-
     def show(self, state, randkey, act_func, params, *args, **kwargs):
         predict = vmap(act_func, in_axes=(None, None, 0))(
             state, params, self.inputs

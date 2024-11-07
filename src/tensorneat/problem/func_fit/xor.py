@@ -3,6 +3,8 @@ from .func_fit import FuncFit
 import itertools
 #import traceback
 
+#/tensorneat/src/tensorneat/problem/func_fit/xor.py
+
 class XOR(FuncFit):
     def __init__(self, num_inputs, bias_value=None, bias_func=None, error_method="mse"):
         super().__init__(error_method=error_method)
@@ -55,8 +57,9 @@ class XOR(FuncFit):
     def input_shape(self):
         # If bias is used, include it in the input shape
         input_length = self.num_inputs + (1 if self.bias_value is not None or self.bias_func is not None else 0)
-        return (2 ** self.num_inputs, self.num_inputs)  # Match input shape for XOR
+        return (2 ** self.num_inputs, input_length)  # Match input shape for XOR
 
     @property
     def output_shape(self):
         return (2 ** self.num_inputs, 1)
+

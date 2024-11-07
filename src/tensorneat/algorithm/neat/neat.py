@@ -64,6 +64,7 @@ class NEAT(BaseAlgorithm):
         return state.update(randkey=randkey)
 
     def ask(self, state):
+        print("ASK from neat state.pop_nodes, state.pop_conns:",state.pop_nodes, state.pop_conns)
         return state.pop_nodes, state.pop_conns
 
     def tell(self, state, fitness):
@@ -80,6 +81,8 @@ class NEAT(BaseAlgorithm):
 
         # speciate the next population
         state = self.species_controller.speciate(state, self.genome.execute_distance)
+
+        print("TELL from neat state, state:",state)
 
         return state
 
