@@ -1,24 +1,29 @@
-from jax import vmap
+from jax import vmap, numpy as jnp
 import numpy as np
 
 from .base import BaseSubstrate
-from tensorneat.genome.utils import set_conn_attrs
+from tensorneat.genome.utils import set_gene_attrs
 
 
 class DefaultSubstrate(BaseSubstrate):
+
+    connection_type = "recurrent"
+
     def __init__(self, num_inputs, num_outputs, coors, nodes, conns):
         self.inputs = num_inputs
         self.outputs = num_outputs
-        self.coors = np.array(coors)
-        self.nodes = np.array(nodes)
-        self.conns = np.array(conns)
+        self.coors = jnp.array(coors)
+        self.nodes = jnp.array(nodes)
+        self.conns = jnp.array(conns)
 
     def make_nodes(self, query_res):
         return self.nodes
 
     def make_conns(self, query_res):
         # change weight of conns
-        return vmap(set_conn_attrs)(self.conns, query_res)
+        # the last column is the weight
+        # print(f"{self.conns.shape=}, {query_res.shape=}")
+        return self.conns.at[:, -1].set(query_res.flatten())
 
     @property
     def query_coors(self):

@@ -20,12 +20,12 @@
 </p>
 
 ## TensorNEAT @ GECCO 2024
-TensorNEAT has been selected to recieve the **[GECCO 2024](https://gecco-2024.sigevo.org/HomePage) Best Paper Award** 🏆
+TensorNEAT has been selected to recieve the **[GECCO 2024 Best Paper Award](https://gecco-2024.sigevo.org/Best-Paper-Awards#GECH_NE_Track)** 🏆
 
 Many thanks to everyone who has been supporting TensorNEAT, and we will remain committed to advancing TensorNEAT for future 'open-endedness'!
 
 ## Introduction
-TensorNEAT is a JAX-based libaray for NeuroEvolution of Augmenting Topologies (NEAT) algorithms, focused on harnessing GPU acceleration to enhance the efficiency of evolving neural network structures for complex tasks. Its core mechanism involves the tensorization of network topologies, enabling parallel processing and significantly boosting computational speed and scalability by leveraging modern hardware accelerators. TensorNEAT is compatible with the [EvoX](https://github.com/EMI-Group/evox/) framewrok.
+TensorNEAT is a JAX-based libaray for NeuroEvolution of Augmenting Topologies (NEAT) algorithms, focused on harnessing GPU acceleration to enhance the efficiency of evolving neural network structures for complex tasks. Its core mechanism involves the tensorization of network topologies, enabling parallel processing and significantly boosting computational speed and scalability by leveraging modern hardware accelerators. TensorNEAT is compatible with the [EvoX](https://github.com/EMI-Group/evox/) framework.
 
 ## Key Features
 - JAX-based network for neuroevolution:
@@ -256,20 +256,20 @@ print(python_code)
 Latex formulas:
 ```latex
 \begin{align}
-h_{0} &= \frac{1}{2.83 e^{5.66 h_{1} - 6.08 h_{2} - 3.03 i_{2}} + 1}\newline
-h_{1} &= \frac{1}{0.3 e^{- 4.8 h_{2} + 9.22 i_{0} + 8.09 i_{1} - 10.24 i_{2}} + 1}\newline
-h_{2} &= \frac{1}{0.27 e^{4.28 i_{1}} + 1}\newline
-o_{0} &= \frac{1}{0.68 e^{- 20.86 h_{0} + 11.12 h_{1} + 14.22 i_{0} - 1.96 i_{2}} + 1}\newline
+h_{0} &= \frac{1}{0.27 e^{4.28 i_{1}} + 1}\newline
+h_{1} &= \frac{1}{0.3 e^{- 4.8 h_{0} + 9.22 i_{0} + 8.09 i_{1} - 10.24 i_{2}} + 1}\newline
+h_{2} &= \frac{1}{2.83 e^{5.66 h_{1} - 6.08 h_{0} - 3.03 i_{2}} + 1}\newline
+o_{0} &= \frac{1}{0.68 e^{- 20.86 h_{2} + 11.12 h_{1} + 14.22 i_{0} - 1.96 i_{2}} + 1}\newline
 \end{align}
 ```
 Python codes:
 ```python
 h = np.zeros(3)
 o = np.zeros(1)
-h[0] = 1/(2.825013*exp(5.660946*h[1] - 6.083459*h[2] - 3.033361*i[2]) + 1)
-h[1] = 1/(0.300038*exp(-4.802896*h[2] + 9.215506*i[0] + 8.091845*i[1] - 10.241107*i[2]) + 1)
-h[2] = 1/(0.269965*exp(4.279962*i[1]) + 1)
-o[0] = 1/(0.679321*exp(-20.860441*h[0] + 11.122242*h[1] + 14.216276*i[0] - 1.961642*i[2]) + 1)
+h[0] = 1/(0.269965*exp(4.279962*i[1]) + 1)
+h[1] = 1/(0.300038*exp(-4.802896*h[0] + 9.215506*i[0] + 8.091845*i[1] - 10.241107*i[2]) + 1)
+h[2] = 1/(2.825013*exp(5.660946*h[1] - 6.083459*h[0] - 3.033361*i[2]) + 1)
+o[0] = 1/(0.679321*exp(-20.860441*h[2] + 11.122242*h[1] + 14.216276*i[0] - 1.961642*i[2]) + 1)
 ```
 
 ## Installation
@@ -389,7 +389,7 @@ We warmly welcome community developers to contribute to TensorNEAT and look forw
 
 ## Community & Support
 
-- Engage in discussions and share your experiences on [GitHub Discussion Board](https://github.com/EMI-Group/evox/discussions).
+- Engage in discussions and share your experiences on [GitHub Issues](https://github.com/EMI-Group/tensorneat/issues).
 - Join our QQ group (ID: 297969717).
 
 
@@ -411,12 +411,16 @@ We warmly welcome community developers to contribute to TensorNEAT and look forw
 If you use TensorNEAT in your research and want to cite it in your work, please use:
 ```
 @inproceedings{10.1145/3638529.3654210,
-    author = {Wang, Lishuang and Zhao, Mengfei and Liu, Enyu and Sun, Kebin and Cheng, Ran},
-    title = {Tensorized NeuroEvolution of Augmenting Topologies for GPU Acceleration},
-    year = {2024},
-    doi = {10.1145/3638529.3654210},
-    pages = {1156–1164},
-    numpages = {9},
-    location = {Melbourne, VIC, Australia},
-    series = {GECCO '24}
+  author = {Wang, Lishuang and Zhao, Mengfei and Liu, Enyu and Sun, Kebin and Cheng, Ran},
+  title = {Tensorized NeuroEvolution of Augmenting Topologies for GPU Acceleration},
+  year = {2024},
+  isbn = {9798400704949},
+  doi = {10.1145/3638529.3654210},
+  booktitle = {Proceedings of the Genetic and Evolutionary Computation Conference},
+  pages = {1156–1164},
+  numpages = {9},
+  keywords = {neuroevolution, GPU acceleration, algorithm library},
+  location = {Melbourne, VIC, Australia},
+  series = {GECCO '24}
 }
+

@@ -30,7 +30,8 @@ pipeline.show(state, best)
 
 # visualize the best individual
 network = algorithm.genome.network_dict(state, *best)
-algorithm.genome.visualize(network, save_path="./imgs/xor_network.svg")
+print(algorithm.genome.repr(state, *best))
+# algorithm.genome.visualize(network, save_path="./imgs/xor_network.svg")
 
 # transform the best individual to latex formula
 from tensorneat.common.sympy_tools import to_latex_code, to_python_code

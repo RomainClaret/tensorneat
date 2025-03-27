@@ -48,10 +48,9 @@ def nan2inf(x):
 workflow = workflows.StdWorkflow(
     algorithm=evox_algorithm,
     problem=problem,
-    candidate_transforms=[jax.jit(jax.vmap(evox_algorithm.transform))],
+    solution_transforms=[jax.jit(jax.vmap(evox_algorithm.transform))],
     fitness_transforms=[nan2inf],
     monitors=[monitor],
-    opt_direction="max",
 )
 
 # init the workflow
@@ -62,5 +61,5 @@ state = workflow.enable_multi_devices(state)
 
 # run the workflow for 100 steps
 for i in range(100):
-    train_info, state = workflow.step(state)
+    state = workflow.step(state)
     monitor.show()

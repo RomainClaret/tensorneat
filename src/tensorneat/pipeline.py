@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 
 import jax, jax.numpy as jnp
 import datetime, time
@@ -20,6 +21,8 @@ class Pipeline(StatefulBaseClass):
         generation_limit: int = 1000,
         is_save: bool = False,
         save_dir=None,
+        show_problem_details: bool = False,
+        using_multidevice: bool = False,
     ):
         assert problem.jitable, "Currently, problem must be jitable"
 
@@ -54,6 +57,13 @@ class Pipeline(StatefulBaseClass):
             if not os.path.exists(self.genome_dir):
                 os.makedirs(self.genome_dir)
 
+        self.show_problem_details = show_problem_details
+
+        self.using_multidevice = using_multidevice
+        if self.using_multidevice:
+            assert jax.device_count() > 1, f"using_multidevice requires more than 1 device, but {jax.device_count()=} devices are available"
+            print(f"Using {jax.device_count()} devices!")
+
     def setup(self, state=State()):
         print("initializing")
         state = state.register(randkey=jax.random.PRNGKey(self.seed))
@@ -73,9 +83,15 @@ class Pipeline(StatefulBaseClass):
         return state
 
     def step(self, state):
+        """
+        returns: 
+            state, previous_pop, fitnesses
+        state: updated state
+        previous_pop: previous population
+        fitnesses: fitnesses of previous population
+        """
 
         randkey_, randkey = jax.random.split(state.randkey)
-        keys = jax.random.split(randkey_, self.pop_size)
 
         pop = self.algorithm.ask(state)
 
@@ -83,9 +99,31 @@ class Pipeline(StatefulBaseClass):
             state, pop
         )
 
-        fitnesses = jax.vmap(self.problem.evaluate, in_axes=(None, 0, None, 0))(
-            state, keys, self.algorithm.forward, pop_transformed
-        )
+        if not self.using_multidevice:
+            keys = jax.random.split(randkey_, self.pop_size)
+            fitnesses = jax.vmap(self.problem.evaluate, in_axes=(None, 0, None, 0))(
+                state, keys, self.algorithm.forward, pop_transformed
+            )
+        else: # using_multidevice
+            num_devices = jax.device_count()
+            assert self.pop_size % num_devices == 0, "if you want to use multiple gpus, pop_size must be divisible by jax.device_count()"
+            pop_size_per_device = self.pop_size // num_devices
+
+            keys = jax.random.split(randkey_, (num_devices, pop_size_per_device))
+            split_pop_transformed = jax.tree_map(
+                lambda x: x.reshape(num_devices, pop_size_per_device, *x.shape[1:]),
+                pop_transformed
+            )
+
+            fitnesses = jax.pmap(
+                lambda key_slice, pop_slice: jax.vmap(self.problem.evaluate, in_axes=(None, 0, None, 0))(
+                    state, key_slice, self.algorithm.forward, pop_slice
+                ),
+                axis_name='devices',
+                in_axes=(0, 0)
+            )(keys, split_pop_transformed)
+
+            fitnesses = fitnesses.reshape(self.pop_size)
 
         # replace nan with -inf
         fitnesses = jnp.where(jnp.isnan(fitnesses), -jnp.inf, fitnesses)
@@ -98,8 +136,19 @@ class Pipeline(StatefulBaseClass):
     def auto_run(self, state):
         print("start compile")
         tic = time.time()
-        compiled_step = jax.jit(self.step).lower(state).compile()
-        # compiled_step = self.step
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                message=r"The jitted function .* includes a pmap. Using jit-of-pmap can lead to inefficient data movement"
+            )
+            compiled_step = jax.jit(self.step).lower(state).compile()
+
+        if self.show_problem_details:
+            self.compiled_pop_transform_func = (
+                jax.jit(jax.vmap(self.algorithm.transform, in_axes=(None, 0)))
+                .lower(state, self.algorithm.ask(state))
+                .compile()
+            )
+
         print(
             f"compile finished, cost time: {time.time() - tic:.6f}s",
         )
@@ -134,17 +183,20 @@ class Pipeline(StatefulBaseClass):
         return state, self.best_genome
 
     def analysis(self, state, pop, fitnesses):
-        
+
         generation = int(state.generation)
 
         valid_fitnesses = fitnesses[~np.isinf(fitnesses)]
-
-        max_f, min_f, mean_f, std_f = (
-            max(valid_fitnesses),
-            min(valid_fitnesses),
-            np.mean(valid_fitnesses),
-            np.std(valid_fitnesses),
-        )
+        # avoid there is no valid fitness in the whole population
+        if len(valid_fitnesses) == 0:
+            max_f, min_f, mean_f, std_f = ["NaN"] * 4
+        else:
+            max_f, min_f, mean_f, std_f = (
+                max(valid_fitnesses),
+                min(valid_fitnesses),
+                np.mean(valid_fitnesses),
+                np.std(valid_fitnesses),
+            )
 
         new_timestamp = time.time()
 
@@ -158,9 +210,7 @@ class Pipeline(StatefulBaseClass):
         if self.is_save:
             # save best
             best_genome = jax.device_get((pop[0][max_idx], pop[1][max_idx]))
-            file_name = os.path.join(
-                self.genome_dir, f"{generation}.npz"
-            )
+            file_name = os.path.join(self.genome_dir, f"{generation}.npz")
             with open(file_name, "wb") as f:
                 np.savez(
                     f,
@@ -171,9 +221,7 @@ class Pipeline(StatefulBaseClass):
 
             # append log
             with open(os.path.join(self.save_dir, "log.txt"), "a") as f:
-                f.write(
-                    f"{generation},{max_f},{min_f},{mean_f},{std_f},{cost_time}\n"
-                )
+                f.write(f"{generation},{max_f},{min_f},{mean_f},{std_f},{cost_time}\n")
 
         print(
             f"Generation: {generation}, Cost time: {cost_time * 1000:.2f}ms\n",
@@ -181,6 +229,15 @@ class Pipeline(StatefulBaseClass):
         )
 
         self.algorithm.show_details(state, fitnesses)
+
+        if self.show_problem_details:
+            pop_transformed = self.compiled_pop_transform_func(
+                state, pop #using previous pop instead of requesting the new one from state here
+            )
+            self.problem.show_details(
+                state, state.randkey, self.algorithm.forward, pop_transformed
+            )
+        # show details for problem
 
     def show(self, state, best, *args, **kwargs):
         transformed = self.algorithm.transform(state, best)
