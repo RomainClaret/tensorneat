@@ -3,13 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .default import DefaultSubstrate
-from tensorneat.genome.utils import set_conn_attrs
+from tensorneat.genome.utils import set_gene_attrs
+from tensorneat.genome.gene.conn import DefaultConn
 
 class GeennsHyperNeatSubstrate(DefaultSubstrate):
     def __init__(self, input_coordinates, output_coordinates, hidden_coordinates, dense_connections=False):
         """
         Initialize the substrate with an option for dense or empty connections.
-        
+
         Parameters:
         - input_coordinates: List of coordinates for input nodes.
         - output_coordinates: List of coordinates for output nodes.
@@ -19,6 +20,7 @@ class GeennsHyperNeatSubstrate(DefaultSubstrate):
         self.input_coordinates = input_coordinates
         self.output_coordinates = output_coordinates
         self.hidden_coordinates = hidden_coordinates
+        self.conn_gene = DefaultConn()
 
         # Combine all coordinates (input + hidden layers + output)
         self.all_coordinates = np.array(input_coordinates + [coord for layer in hidden_coordinates for coord in layer] + output_coordinates)
@@ -84,14 +86,14 @@ class GeennsHyperNeatSubstrate(DefaultSubstrate):
 
     #def make_conns(self, query_res):
     #    # change weight of conns
-    #    return vmap(set_conn_attrs)(self.conns, query_res)
+    #    return vmap(set_gene_attrs, in_axes=(None, 0, 0))(self.conn_gene, self.conns, query_res)
 
     def make_conns(self, query_res):
         assert query_res.shape[0] == self.conns.shape[0], \
             f"Mismatch between number of connection queries {query_res.shape[0]} and substrate connections {self.conns.shape[0]}"
         
         # Adjust weights for the connections based on the query results
-        return vmap(set_conn_attrs)(self.conns, query_res)
+        return vmap(set_gene_attrs, in_axes=(None, 0, 0))(self.conn_gene, self.conns, query_res)
 
 
     @property

@@ -5,7 +5,7 @@ from .utils import unflatten_conns
 from .base import BaseGenome
 from .gene import DefaultNode, DefaultConn
 from .operations import DefaultMutation, DefaultCrossover, DefaultDistance
-from .utils import unflatten_conns, extract_node_attrs, extract_conn_attrs
+from .utils import unflatten_conns, extract_gene_attrs
 
 from tensorneat.common import attach_with_inf
 
@@ -58,10 +58,10 @@ class GeennsRecurrentGenome(BaseGenome):
         u_conns = unflatten_conns(nodes, conns)
         
         # Extract connection attributes (e.g., weights) from the genome's connections
-        conns_attrs = extract_conn_attrs(conns)
-        
+        conns_attrs = jax.vmap(extract_gene_attrs, in_axes=(None, 0))(self.conn_gene, conns)
+
         # Extract node attributes (e.g., activation functions) from the genome's nodes
-        nodes_attrs = extract_node_attrs(nodes)
+        nodes_attrs = jax.vmap(extract_gene_attrs, in_axes=(None, 0))(self.node_gene, nodes)
         
         # Set the attributes for further use in the forward method
         self.conns_attrs = conns_attrs
