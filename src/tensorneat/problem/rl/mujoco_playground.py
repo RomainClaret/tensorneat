@@ -1,23 +1,40 @@
 import jax.numpy as jnp
+from jax import Array
 from .rl_jit import RLEnv, norm_obs
 
 
-class BraxEnv(RLEnv):
+class MujocoEnv(RLEnv):
     def __init__(
-        self, env_name: str = "ant", backend: str = "generalized", *args, **kwargs
+        self, env_name: str = "SwimmerSwimmer6", *args, **kwargs
     ):
-        from brax import envs
+        from mujoco_playground import registry
         super().__init__(*args, **kwargs)
         self.env_name = env_name
-        self.env = envs.create(env_name=env_name, backend=backend)
+        self.env = registry.load(env_name=env_name)
 
     def env_step(self, randkey, env_state, action):
         state = self.env.step(env_state, action)
-        return state.obs, state, state.reward, state.done.astype(jnp.bool_), state.info
+        obs = state.obs
+        if not isinstance(obs, Array):
+            if "state" in obs:
+                obs = obs["state"]
+            else:
+                raise ImportError(
+                    f"This Pytree observation space is not supported yet: {obs}"
+                )
+        return obs, state, state.reward, state.done.astype(jnp.bool_), state.info
 
     def env_reset(self, randkey):
         init_state = self.env.reset(randkey)
-        return init_state.obs, init_state
+        obs = init_state.obs
+        if not isinstance(obs, Array):
+            if "state" in obs:
+                obs = obs["state"]
+            else:
+                raise ImportError(
+                    f"This Pytree observation space is not supported yet: {obs}"
+                )
+        return obs, init_state
 
     @property
     def input_shape(self):
@@ -41,7 +58,7 @@ class BraxEnv(RLEnv):
             **kwargs,
         ):
 
-        assert output_type in ["rgb_array", "gif", "mp4"]
+        assert output_type in ["gif", "mp4"]
 
         import jax
         import imageio
@@ -86,10 +103,6 @@ class BraxEnv(RLEnv):
             imgs = image.render_array(
                 sys=self.env.sys, trajectory=state_histories, height=height, width=width
             )
-
-        if output_type == "rgb_array":
-            imgs = np.array(imgs)
-            return imgs
 
         if save_path is None:
             save_path = f"{self.env_name}.{output_type}"
