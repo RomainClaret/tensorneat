@@ -98,3 +98,10 @@ class SympyClip(sp.Function):
 
     def _latex(self, printer):
         return rf"\mathrm{{clip}}\left({sp.latex(self.args[0])}, {self.args[1]}, {self.args[2]}\right)"
+
+
+class SympyGauss(sp.Function):
+    """Gaussian activation function for HyperNEAT pattern generation."""
+    @classmethod
+    def eval(cls, z):
+        return sp.exp(-z**2)

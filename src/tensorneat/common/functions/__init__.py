@@ -19,6 +19,7 @@ act_name2jnp = {
     "log": log_,
     "exp": exp_,
     "abs": abs_,
+    "gauss": gauss_,
 }
 
 act_name2sympy = {
@@ -35,6 +36,7 @@ act_name2sympy = {
     "exp": SympyExp,
     "abs": SympyAbs,
     "clip": SympyClip,
+    "gauss": SympyGauss,
 }
 
 agg_name2jnp = {
