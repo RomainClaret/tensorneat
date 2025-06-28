@@ -25,6 +25,7 @@ class NEAT(BaseAlgorithm):
         compatibility_threshold: float = 2.0,
         species_fitness_func: Callable = jnp.max,
         species_number_calculate_by: str = "rank",
+        verbose: bool = True,
     ):
 
         assert species_number_calculate_by in [
@@ -34,6 +35,7 @@ class NEAT(BaseAlgorithm):
 
         self.genome = genome
         self.pop_size = pop_size
+        self.verbose = verbose
         self.species_controller = SpeciesController(
             pop_size,
             species_size,
@@ -72,7 +74,8 @@ class NEAT(BaseAlgorithm):
         return state.update(randkey=randkey)
 
     def ask(self, state):
-        print("ASK from neat state.pop_nodes, state.pop_conns:",state.pop_nodes, state.pop_conns)
+        if self.verbose:
+            print("ASK from neat state.pop_nodes, state.pop_conns:",state.pop_nodes, state.pop_conns)
         return state.pop_nodes, state.pop_conns
 
     def tell(self, state, fitness):
@@ -90,7 +93,8 @@ class NEAT(BaseAlgorithm):
         # speciate the next population
         state = self.species_controller.speciate(state, self.genome.execute_distance)
 
-        print("TELL from neat state, state:",state)
+        if self.verbose:
+            print("TELL from neat state, state:",state)
 
         return state
 

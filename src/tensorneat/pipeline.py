@@ -23,6 +23,7 @@ class Pipeline(StatefulBaseClass):
         save_dir=None,
         show_problem_details: bool = False,
         using_multidevice: bool = False,
+        verbose: bool = True,
     ):
         assert problem.jitable, "Currently, problem must be jitable"
 
@@ -32,6 +33,7 @@ class Pipeline(StatefulBaseClass):
         self.fitness_target = fitness_target
         self.generation_limit = generation_limit
         self.pop_size = self.algorithm.pop_size
+        self.verbose = verbose
 
         np.random.seed(self.seed)
 
@@ -50,7 +52,8 @@ class Pipeline(StatefulBaseClass):
                 self.save_dir = f"./{self.__class__.__name__} {now}"
             else:
                 self.save_dir = save_dir
-            print(f"save to {self.save_dir}")
+            if self.verbose:
+                print(f"save to {self.save_dir}")
             if not os.path.exists(self.save_dir):
                 os.makedirs(self.save_dir)
             self.genome_dir = os.path.join(self.save_dir, "genomes")
@@ -62,10 +65,12 @@ class Pipeline(StatefulBaseClass):
         self.using_multidevice = using_multidevice
         if self.using_multidevice:
             assert jax.device_count() > 1, f"using_multidevice requires more than 1 device, but {jax.device_count()=} devices are available"
-            print(f"Using {jax.device_count()} devices!")
+            if self.verbose:
+                print(f"Using {jax.device_count()} devices!")
 
     def setup(self, state=State()):
-        print("initializing")
+        if self.verbose:
+            print("initializing")
         state = state.register(randkey=jax.random.PRNGKey(self.seed))
 
         state = self.algorithm.setup(state)
@@ -79,7 +84,8 @@ class Pipeline(StatefulBaseClass):
             with open(os.path.join(self.save_dir, "log.txt"), "w") as f:
                 f.write("Generation,Max,Min,Mean,Std,Cost Time\n")
 
-        print("initializing finished")
+        if self.verbose:
+            print("initializing finished")
         return state
 
     def step(self, state):
@@ -134,7 +140,8 @@ class Pipeline(StatefulBaseClass):
         return state.update(randkey=randkey), previous_pop, fitnesses
 
     def auto_run(self, state):
-        print("start compile")
+        if self.verbose:
+            print("start compile")
         tic = time.time()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
@@ -149,9 +156,10 @@ class Pipeline(StatefulBaseClass):
                 .compile()
             )
 
-        print(
-            f"compile finished, cost time: {time.time() - tic:.6f}s",
-        )
+        if self.verbose:
+            print(
+                f"compile finished, cost time: {time.time() - tic:.6f}s",
+            )
 
         for _ in range(self.generation_limit):
 
